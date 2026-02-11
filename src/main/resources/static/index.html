@@ -18,8 +18,8 @@
 <body><noscript>You need to enable JavaScript to run this app.</noscript>
 	<div id="aws-toast"
 		style="background-color:#28a745;color:#fff;padding:12px 20px;text-align:center;font-weight:700;font-size:1rem;box-shadow:0 4px 6px rgba(0,0,0,.1)">
-		Check out <a href="https://aws.certificationexam.guru"
-			target="_blank" style="color:#fff;text-decoration:underline">aws.certificationexam.guru </a>. Get
+		Check out <a href="https://certificationexams.com"
+			target="_blank" style="color:#fff;text-decoration:underline">certificationexams.com </a>. Get
 		AWS Certified fast! 	&nbsp;		<a href="https://www.twitter.com/cameronmcnz" style="color:#fff;">
 			   <i class="lni lni-twitter-original"></i>
 			</a>
@@ -87,111 +87,144 @@
 		a:hover {
 			text-decoration: underline;
 		}
+
+		.analytics-card {
+			margin-top: 1rem;
+		}
+
+		.analytics-header {
+			cursor: pointer;
+			user-select: none;
+			font-weight: 600;
+			background-color: #f8f9fa;
+		}
+
+		.analytics-body {
+			display: none;
+		}
+
+		.analytics-header .caret {
+			transition: transform 0.2s ease;
+		}
+
+		.analytics-header.open .caret {
+			transform: rotate(180deg);
+		}
 	</style>
 	<br />
 
 	<div class="container">
-
-		<div class="card" id="actuatorCard">
-			<table>
-				<thead>
-					<tr>
-						<th>Endpoint</th>
-						<th>Description</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td><a href="/actuator">/actuator</a></td>
-						<td>Lists all available actuator endpoints</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/health">/actuator/health</a></td>
-						<td>Application health status</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/metrics">/actuator/metrics</a></td>
-						<td>List of all metrics</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/metrics/jvm.memory.used">/actuator/metrics/jvm.memory.used</a></td>
-						<td>Used JVM memory</td>
-					</tr>
-					<tr>
-						<td><a href="https://www.youtube.com/embed/CCMAhpVvpyk">Actuator Tutorial</a></td>
-						<td> <center><iframe width="560" height="315" src="https://www.youtube.com/embed/CCMAhpVvpyk"
-								title="YouTube video player" frameborder="0"
-								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-								allowfullscreen>
-							</iframe></center></td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/metrics/system.cpu.usage">/actuator/metrics/system.cpu.usage</a></td>
-						<td>System CPU usage</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/threaddump">/actuator/threaddump</a></td>
-						<td>Live thread dump</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/info">/actuator/info</a></td>
-						<td>Custom info (version, app details)</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/env">/actuator/env</a></td>
-						<td>Environment properties and variables</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/loggers">/actuator/loggers</a></td>
-						<td>Logging levels and configuration</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/beans">/actuator/beans</a></td>
-						<td>All Spring beans</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/mappings">/actuator/mappings</a></td>
-						<td>All request mappings</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/prometheus">/actuator/prometheus</a></td>
-						<td>Prometheus-formatted metrics</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/caches">/actuator/caches</a></td>
-						<td>View cache statistics</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/conditions">/actuator/conditions</a></td>
-						<td>Auto-configuration conditions report</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/configprops">/actuator/configprops</a></td>
-						<td>List of configuration properties</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/scheduledtasks">/actuator/scheduledtasks</a></td>
-						<td>Scheduled tasks in the application</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/metrics/http.server.requests">/actuator/metrics/http.server.requests</a>
-						</td>
-						<td>HTTP request performance metrics</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/metrics/jvm.threads.live">/actuator/metrics/jvm.threads.live</a></td>
-						<td>Live JVM threads</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/metrics/process.uptime">/actuator/metrics/process.uptime</a></td>
-						<td>Application uptime</td>
-					</tr>
-					<tr>
-						<td><a href="/actuator/metrics/process.cpu.usage">/actuator/metrics/process.cpu.usage</a></td>
-						<td>CPU usage by this process</td>
-					</tr>
-				</tbody>
-			</table>
+		<div class="card analytics-card" id="analyticsCard">
+			<div class="card-header d-flex justify-content-between align-items-center analytics-header"
+				id="analyticsToggle">
+				<span>Application Analytics</span>
+				<svg class="caret" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+					viewBox="0 0 16 16" aria-hidden="true">
+					<path
+						d="M3.204 5h9.592L8 10.481 3.204 5zm-.753.659 4.796 5.48a1 1 0 0 0 1.506 0l4.796-5.48c.566-.647.106-1.659-.753-1.659H3.204a1 1 0 0 0-.753 1.659z" />
+				</svg>
+			</div>
+			<div class="card-body analytics-body" id="analyticsBody">
+				<table>
+					<thead>
+						<tr>
+							<th>Endpoint</th>
+							<th>Description</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td><a href="/actuator">/actuator</a></td>
+							<td>Lists all available actuator endpoints</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/health">/actuator/health</a></td>
+							<td>Application health status</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/metrics">/actuator/metrics</a></td>
+							<td>List of all metrics</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/metrics/jvm.memory.used">/actuator/metrics/jvm.memory.used</a></td>
+							<td>Used JVM memory</td>
+						</tr>
+						<tr>
+							<td><a href="https://www.youtube.com/embed/CCMAhpVvpyk">Actuator Tutorial</a></td>
+							<td> <center><iframe width="560" height="315" src="https://www.youtube.com/embed/CCMAhpVvpyk"
+									title="YouTube video player" frameborder="0"
+									allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+									allowfullscreen>
+								</iframe></center></td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/metrics/system.cpu.usage">/actuator/metrics/system.cpu.usage</a></td>
+							<td>System CPU usage</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/threaddump">/actuator/threaddump</a></td>
+							<td>Live thread dump</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/info">/actuator/info</a></td>
+							<td>Custom info (version, app details)</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/env">/actuator/env</a></td>
+							<td>Environment properties and variables</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/loggers">/actuator/loggers</a></td>
+							<td>Logging levels and configuration</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/beans">/actuator/beans</a></td>
+							<td>All Spring beans</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/mappings">/actuator/mappings</a></td>
+							<td>All request mappings</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/prometheus">/actuator/prometheus</a></td>
+							<td>Prometheus-formatted metrics</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/caches">/actuator/caches</a></td>
+							<td>View cache statistics</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/conditions">/actuator/conditions</a></td>
+							<td>Auto-configuration conditions report</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/configprops">/actuator/configprops</a></td>
+							<td>List of configuration properties</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/scheduledtasks">/actuator/scheduledtasks</a></td>
+							<td>Scheduled tasks in the application</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/metrics/http.server.requests">/actuator/metrics/http.server.requests</a>
+							</td>
+							<td>HTTP request performance metrics</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/metrics/jvm.threads.live">/actuator/metrics/jvm.threads.live</a></td>
+							<td>Live JVM threads</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/metrics/process.uptime">/actuator/metrics/process.uptime</a></td>
+							<td>Application uptime</td>
+						</tr>
+						<tr>
+							<td><a href="/actuator/metrics/process.cpu.usage">/actuator/metrics/process.cpu.usage</a></td>
+							<td>CPU usage by this process</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 		</div>
 <br/>
 <!-- LineIcons CDN (place in your <head> once if not already included) -->
@@ -215,6 +248,22 @@
 </div>
 
 	<br/>
+
+	<script>
+		(function () {
+			var toggle = document.getElementById("analyticsToggle");
+			var body = document.getElementById("analyticsBody");
+			if (!toggle || !body) {
+				return;
+			}
+
+			toggle.addEventListener("click", function () {
+				var isOpen = body.style.display === "block";
+				body.style.display = isOpen ? "none" : "block";
+				toggle.classList.toggle("open", !isOpen);
+			});
+		})();
+	</script>
 
 </body>
 

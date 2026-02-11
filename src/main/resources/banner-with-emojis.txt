@@ -5,24 +5,24 @@
 |  |__| | |  |____     |  |        |  `----.|  |____ |  |\  \----.   |  |     |  | |  |     |  | |  |____ |  '--'  ||__| 
  \______| |_______|    |__|         \______||_______|| _| `._____|   |__|     |__| |__|     |__| |_______||_______/ (__) 
  
- Brought to you by www.certificationexams.com Practice exams for Java, AWS, GitHub, Copilot, Spring, Scrum and more!
+ Brought to you by www.certificationexam.guru. Practice exams for Java, AWS, Spring, Scrum and more!
                                                                                                                          
 
-~ ${application.title} - v${application.version}
-~ Spring Boot ${spring-boot.version}
-~ Java ${java.version} (${java.vm.name})
-~ OS: ${os.name} ${os.arch}
-~ User: ${user.name}
-~ PID: ${PID}, Host: ${HOSTNAME}
-~ Profile: ${spring.profiles.active}
+🚀 ${application.title} - v${application.version}
+🔧 Spring Boot ${spring-boot.version}
+☕ Java ${java.version} (${java.vm.name})
+💻 OS: ${os.name} ${os.arch}
+📦 User: ${user.name}
+🆔 PID: ${PID}, Host: ${HOSTNAME}
+🌱 Profile: ${spring.profiles.active}
 
-~ Website:  certificationexams.com
-~ YouTube:  youtube.com/@cameronmcnz
-~ LinkedIn: www.linkedin.com/in/cameronwmckenzie
-~ Twitter/X: twitter.com/cameronmcnz
-~ Bluesky:   bsky.app/profile/cameronmckenzie.com
+🌐 Website:  certificationexam.guru
+🎥 YouTube:  youtube.com/@cameronmcnz
+💼 LinkedIn: www.linkedin.com/in/cameronwmckenzie
+🐦 Twitter/X: twitter.com/cameronmcnz
+🌌 Bluesky:   bsky.app/profile/cameronmckenzie.com
 
-~ Try http://localhost:<port>/swagger-ui/index.html for the Swagger UI.
+📘 Try http://localhost:<port>/swagger-ui/index.html for the Swagger UI.
 
-Built by Cameron McKenzie and hosted at www.certificationexams.com — Check us out!
+Built by Cameron McKenzie and hosted at www.certificationexam.guru — Check us out!
 
