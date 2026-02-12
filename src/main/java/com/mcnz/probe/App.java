@@ -34,6 +34,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.ListTablesResponse;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityResponse;
 
@@ -240,11 +249,139 @@ public class App {
         return result;
     }
 
+    @GetMapping("/aws/dynamodb/tables")
+    @Operation(summary = "List DynamoDB tables visible to this app")
+    public Map<String, Object> listDynamoDbTables() {
+        Map<String, Object> result = new HashMap<>();
+        String regionName = resolveAwsRegion();
+
+        result.put("region", regionName);
+
+        try (DynamoDbClient dynamoDb = DynamoDbClient.builder()
+                .region(Region.of(regionName))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build()) {
+            ListTablesResponse response = dynamoDb.listTables();
+            result.put("tables", response.tableNames());
+            result.put("tableCount", response.tableNames().size());
+        } catch (Exception e) {
+            result.put("error", "Unable to list DynamoDB tables");
+            result.put("details", e.getMessage());
+        }
+
+        return result;
+    }
+
+    @GetMapping("/aws/s3/buckets")
+    @Operation(summary = "List S3 buckets visible to this app")
+    public Map<String, Object> listS3Buckets() {
+        Map<String, Object> result = new HashMap<>();
+        String regionName = resolveAwsRegion();
+        result.put("region", regionName);
+
+        try (S3Client s3 = S3Client.builder()
+                .region(Region.of(regionName))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build()) {
+            ListBucketsResponse response = s3.listBuckets();
+            List<String> buckets = response.buckets().stream()
+                    .map(b -> b.name())
+                    .toList();
+            result.put("buckets", buckets);
+            result.put("bucketCount", buckets.size());
+        } catch (Exception e) {
+            result.put("error", "Unable to list S3 buckets");
+            result.put("details", e.getMessage());
+        }
+
+        return result;
+    }
+
+    @GetMapping("/aws/s3/buckets/{bucketName}/objects")
+    @Operation(summary = "List objects in an S3 bucket")
+    public Map<String, Object> listS3BucketObjects(@org.springframework.web.bind.annotation.PathVariable String bucketName,
+                                                   @RequestParam(required = false, defaultValue = "") String prefix) {
+        Map<String, Object> result = new HashMap<>();
+        String regionName = resolveAwsRegion();
+        result.put("region", regionName);
+        result.put("bucket", bucketName);
+        result.put("prefix", prefix);
+
+        try (S3Client s3 = S3Client.builder()
+                .region(Region.of(regionName))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build()) {
+            ListObjectsV2Response response = s3.listObjectsV2(r -> r.bucket(bucketName).prefix(prefix));
+            List<Map<String, Object>> objects = new ArrayList<>();
+            for (S3Object obj : response.contents()) {
+                Map<String, Object> entry = new HashMap<>();
+                entry.put("key", obj.key());
+                entry.put("size", obj.size());
+                entry.put("lastModified", obj.lastModified() != null ? obj.lastModified().toString() : null);
+                objects.add(entry);
+            }
+            result.put("objects", objects);
+            result.put("objectCount", objects.size());
+            result.put("isTruncated", response.isTruncated());
+        } catch (Exception e) {
+            result.put("error", "Unable to list objects in bucket");
+            result.put("details", e.getMessage());
+        }
+
+        return result;
+    }
+
+    @GetMapping("/aws/s3/download")
+    @Operation(summary = "Download an S3 object by bucket and key")
+    public org.springframework.http.ResponseEntity<?> downloadS3Object(@RequestParam String bucket,
+                                                                       @RequestParam String key) {
+        String regionName = resolveAwsRegion();
+        try (S3Client s3 = S3Client.builder()
+                .region(Region.of(regionName))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build()) {
+            GetObjectRequest request = GetObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .build();
+            ResponseBytes<GetObjectResponse> response = s3.getObjectAsBytes(request);
+
+            String contentType = response.response().contentType();
+            if (contentType == null || contentType.isBlank()) {
+                contentType = "application/octet-stream";
+            }
+
+            return org.springframework.http.ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"" + key + "\"")
+                    .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
+                    .body(response.asByteArray());
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Unable to download S3 object");
+            error.put("details", e.getMessage());
+            error.put("bucket", bucket);
+            error.put("key", key);
+            error.put("region", regionName);
+            return org.springframework.http.ResponseEntity.status(500).body(error);
+        }
+    }
+
     private Optional<String> readFile(String path) {
         try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
             return Optional.of(reader.readLine());
         } catch (IOException e) {
             return Optional.empty();
         }
+    }
+
+    private String resolveAwsRegion() {
+        String regionName = System.getenv("AWS_REGION");
+        if (regionName == null || regionName.isBlank()) {
+            regionName = System.getenv("AWS_DEFAULT_REGION");
+        }
+        if (regionName == null || regionName.isBlank()) {
+            regionName = "us-east-1";
+        }
+        return regionName;
     }
 } 
