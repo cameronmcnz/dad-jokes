@@ -1,0 +1,98 @@
+package com.mcnz.ai.jokes;
+
+import java.util.Map;
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.converter.BeanOutputConverter;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@SpringBootApplication
+public class DadjokesApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(DadjokesApplication.class, args);
+	}
+
+}
+
+record DadJokeResponse(
+    String topic,
+    String joke,
+    double confidence
+) {}
+
+@Service
+class DadJokeService {
+
+  private final ChatClient chatClient;
+
+  public DadJokeService(ChatClient.Builder builder) {
+    this.chatClient = builder.build();
+  }
+
+  public DadJokeResponse generateDadJoke(String topic) {
+    String safeTopic = (topic == null || topic.isBlank()) ? "fish" : topic.trim();
+
+    BeanOutputConverter<DadJokeResponse> converter =
+        new BeanOutputConverter<>(DadJokeResponse.class);
+
+    // Converter provides formatting rules the model should follow.
+    String format = converter.getFormat();
+
+    String templateText = """
+      You are a dad-joke generator.
+
+      Create ONE short dad joke about the topic: {topic}
+
+      Requirements:
+      - Keep it clean and workplace-safe.
+      - Make it a real dad joke (punny, groan-worthy).
+      - Return confidence from 0.0 to 1.0 (how good the joke is).
+
+      {format}
+      """;
+
+    PromptTemplate promptTemplate = new PromptTemplate(templateText);
+    String prompt = promptTemplate.render(Map.of(
+        "topic", safeTopic,
+        "format", format
+    ));
+
+    DadJokeResponse result = chatClient
+        .prompt()
+        .user(prompt)
+        .call()
+        .entity(converter);
+
+    // Small safety: clamp confidence to [0,1] in case the model drifts.
+    double c = result.confidence();
+    double clamped = Math.max(0.0, Math.min(1.0, c));
+
+    return new DadJokeResponse(
+        (result.topic() == null || result.topic().isBlank()) ? safeTopic : result.topic(),
+        result.joke(),
+        clamped
+    );
+  }
+}
+
+@RestController
+class DadJokeController {
+
+	  private final DadJokeService service;
+
+	  public DadJokeController(DadJokeService service) {
+	    this.service = service;
+	  }
+
+	  @GetMapping("/joke")
+	  public DadJokeResponse joke(@RequestParam(defaultValue = "software development") String topic) {
+	    return service.generateDadJoke(topic);
+	  }
+	}
