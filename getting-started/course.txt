@@ -1,0 +1,119 @@
+Update font!
+
+
+getting-started
+Maven
+25
+com.mcnz.spring.ai
+
+
+dev
+openai
+web
+
+Update the GettingStartedApplication to implement the CommandLineRunner and add an empty run method to ensure the code compiles. Don't add anything more, not even comments.
+
+Create a new @RestController class named SimpsonsExpert that contains a single @Get decorated method named trivia that is passed in a single query String param named prompt. Just return a "200" text String, and don't add any extra comments or text. Then start the server and invoke the endpoint with a CURL.
+
+Invoke the web endpoint with a CURL command.
+
+
+package com.mcnz.spring.ai;
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class SimpsonsExpert {
+	
+	ChatClient chatClient;
+	
+	public SimpsonsExpert(ChatClient.Builder builder) {
+		chatClient =  builder.build();
+	}
+
+    @GetMapping("/trivia")
+    public String trivia(@RequestParam String prompt) {
+    	
+    	String response = chatClient.prompt(prompt).call().content();
+        return response;
+        
+    }
+
+}
+
+
+
+v1
+
+package com.mcnz.spring.ai;
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class SimpsonsExpert {
+	
+	ChatClient chatClient;
+	
+	public SimpsonsExpert(ChatClient.Builder builder) {
+		chatClient =  builder.build();
+	}
+
+    @GetMapping("/trivia")
+    public String trivia(@RequestParam String prompt) {
+    	
+    	String response = chatClient.prompt(prompt).call().content();
+        return response;
+        
+    }
+
+}
+
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class SimpsonsExpert {
+	
+	ChatClient chatClient;
+	
+	public SimpsonsExpert(ChatClient.Builder builder) {
+		chatClient =  builder.build();
+	}
+
+	@GetMapping("/trivia")
+	public String trivia(@RequestParam String prompt) {
+
+	    String systemMessage = """
+	        You are a trivia assistant specialized ONLY in the TV show "The Simpsons".
+
+	        Rules:
+	        - Only answer questions related to The Simpsons.
+	        - Only provide trivia about The Simpsons.
+	        - If the question is not about The Simpsons, respond with:
+	          "I can only answer trivia questions about The Simpsons."
+	        - Do not answer non-Simpsons questions.
+	        """;
+
+	    String response = chatClient.prompt()
+	        .system(systemMessage)
+	        .user(prompt)
+	        .call()
+	        .content();
+
+	    return response;
+	}
+
+}
+
+
+v2
+

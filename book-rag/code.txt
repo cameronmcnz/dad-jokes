@@ -1,0 +1,201 @@
+spring.application.name=book-rag
+
+spring.ai.openai.chat.options.model=gpt-5.2
+spring.devtools.restart.enabled=false
+
+
+package com.mcnz.spring.ai;
+
+import java.net.URI;
+
+// RagController.java
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.core.io.UrlResource;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.annotation.PostConstruct;
+
+@RestController
+public class RagController {
+
+    private final ChatClient chatClient;
+    private final VectorStore vectorStore;
+    
+    public RagController(ChatClient.Builder builder, EmbeddingModel embeddingModel) {
+        this.chatClient = builder.build();
+        this.vectorStore = SimpleVectorStore.builder(embeddingModel).build(); 
+    }
+    
+    @PostConstruct
+    void ingestBookOnStartup() throws Exception {
+
+        var pdfUrl = "https://certificationexams.pro/docs/pickeringisspringfield.pdf";
+
+        var resource = new UrlResource(URI.create(pdfUrl));
+        var pages = new PagePdfDocumentReader(resource).get(); // returns List<Document
+
+        vectorStore.add(pages);
+
+        IO.println("✅ RAG ingestion complete: " + pdfUrl);
+    }
+
+    @GetMapping("/ask")
+    public String ask(@RequestParam String question) {
+    	
+    	var searchQuery = SearchRequest.builder().query(question).topK(5).build();
+        var selectedPages = vectorStore.similaritySearch(searchQuery);
+
+        var additionalContext = new StringBuilder();
+        for (int i = 0; i < selectedPages.size(); i++) {
+            var page = selectedPages.get(i);
+            additionalContext.append("\n\n Page from the Book: ").append(page.getText());
+        }
+        
+        IO.println(additionalContext);
+
+        var prompt = """
+            You are answering questions using ONLY the context provided from the popular Pickering is Springfield book.
+            If the answer is not in the context, say: "I don't know, given the pages of the book I've read. Maybe ask me something else?"
+
+            CONTEXT:
+            %s
+
+            QUESTION:
+            %s
+            """.formatted(additionalContext, question);
+
+        return chatClient.prompt()
+                .user(prompt)
+                .call()
+                .content();
+    }
+}
+
+
+
+Read these pages from my Book "Pickering is Springfield" and tell me the various locations in which the book is set.
+
+
+Read these pages from my Book "Pickering is Springfield" and tell the girl's nickname for pickering.
+
+
+Page from the Book: 
+
+Page from the Book:
+Pickering is Springfield
+
+“I lived on that same street when I lived in Canada.” In fact,
+when we chatted further, it appeared that she had lived just four
+houses down from me, five years prior. Curiously enough, it
+took a six hour flight to Dublin to finally make her acquaintance;
+funny.
+
+“You’re kidding" I said. "I was born and raised in Ajax.
+We’re pretty much neighbors.”
+
+“Ah, Ajax. How’s that shopping mall of yours coming? Have
+they built a movie theatre there, yet?” That was a jab. There was
+always a bit of a rivalry between the people of Shmickering and
+the residents of Ajax. “What a sweet little lemon town. We may
+have been neighbors once, but I haven’t lived in Canada for quite
+a while.”
+
+“When did you leave?”
+
+“I headed to Los Angeles about fifteen years ago. I finished
+High School and I was gone. But that little town where I spent
+most of my summers growing up has never been far from my
+heart. I head back practically every summer.”
+
+“You live in LA, but you miss Pickering? How does that
+make any sense?”
+
+“Well, I don’t know if I’d say that I missed it. Being a
+teenager in a middle-class Toronto suburb isn’t exactly exciting.
+But I’ve always thought the town of Pickering was interesting.
+I’ve always thought of it as Toronto’s wanting little sibling.
+Anything Toronto didn’t want, they could always pawn off on
+Pickering – a sewage treatment plant, an incinerator, a landfill
+site, an airport, a nuclear power plant... It’s actually pretty
+comical.”
+
+“Well, you’ll have to excuse me for not being a historian on
+the topic of Pickering, Ontario. Maybe you can enlighten me?”
+
+“And why should I just enlighten just you?” She asked. “I’ve
+taken it upon myself to enlighten everyone.”
+
+And it was here that the encounter really started to get
+interesting.
+
+23
+
+
+Page from the Book:
+www.pickeringisspringfield.com
+
+of it, just like I am when I tell women in the club that I’m a
+NASA astronaut, or the author of Catcher in the Rye. But when I
+toss around crap in the clubs, I do it to get a laugh, to capture a
+young woman’s attention, or to keep her interested in me for just
+a little bit. But this woman really didn’t seem the slightest bit
+interested in keeping my attention. I mean, I was clearly the
+one casually pursuing her. There was no discernable impetus for
+her to tell me any tales, and bullshitting just for the sake of
+bullshitting just didn’t seem like her modus operandi. Plus, in a
+very discomforting way, things just kinda made plausible sense.
+I mean, here we were, in a nice hotel in Vegas, only a four or
+five hour drive from LA. If I met someone in Antigonish, Nova
+Scotia, who told me they wrote scripts for Hollywood, well, I’d
+have a hard time believing them. But it wasn’t that improbable in
+Vegas.
+
+“Fuck off.” That was the most intellectually honest response I
+could give. I’m not sure if it captured my combined disbelief and
+incredulousity, but it was all that I could muster.
+
+“You don’t have to believe me if you don’t want to. You
+asked me. I didn’t ask to tell you. If you want to change the
+subject, we can. When did you start shaving your head?”
+
+“Seriously, you write for The Simpson’s?”
+
+“I told you. I’m not a writer.” It’s funny, I always boast about
+being a writer, but she considered it to be an insult of the highest
+order. She didn’t like being referred to as being a writer, that was
+clear. “You can call me a contributor. I don’t write, but I am
+around when things get written. Let’s just say, I have influence.
+Or at least, I had influence before I came out here.” She looked
+into her drink as she said it. It was the first time she spoke
+without having the confidence to look me in the eye. But her
+lack of temerity was short lived, as she raised her head back up
+to chat with me.
+
+“And you plant little tidbits of information about Pickering in
+The Simpson’s. C’mon? You expect me to believe that?”
+
+She smiled again. This was totally her little secret, and you
+could tell that she enjoyed the chance to share it with someone. I
+doubt there were too many people in California or Nevada that
+cared too much about a little suburb outside of Toronto.
+
+40
+
+
+Page from the Book:
+This book is dedicated to my father, Cecil McKenzie,
+stwho left us on June 21 , 2007.
+
+In a time when so many kids grow up without fathers, and so
+many men just walk out on their responsibilities, I was
+blessed with a father that loved being just that, a father,
+despite the fact that he never had a father of his own.
+
+

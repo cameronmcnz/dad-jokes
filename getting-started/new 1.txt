@@ -1,0 +1,15 @@
+Update font!
+
+
+getting-started
+Maven
+25
+com.mcnz.spring.ai
+
+
+dev
+openai
+web
+
+Update the GettingStartedApplication to implement the CommandLineRunner and add an empty run method to ensure the code compiles. Don't add anything more, not even comments.
+

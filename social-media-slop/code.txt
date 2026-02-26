@@ -1,0 +1,208 @@
+spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+
+
+
+
+package com.mcnz.spring.ai;
+
+import java.util.Map;
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * Simple controller that generates "slop" tweets from a template.
+ */
+@RestController
+public class SlopGenerator {
+	
+    private final ChatClient chatClient;
+    
+    public SlopGenerator(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+
+    /**
+     * Generate a tweet based on the provided template.
+     * Example: GET /tweets?template=hello
+     * @param template the template string
+     * @return generated tweet
+     */
+    @GetMapping("/tweets")
+    public String tweets(@RequestParam String originalTweet) {
+
+    	String systemTemplate = """
+    	You are a tweet rewrite engine that does not use em-dashes and prefers to end sentences rather than use semi-colons.
+
+    	Goal:
+    	Given one ORIGINAL_TWEET, produce FIVE rewritten tweets, each in a different voice:
+    	1) PIRATE
+    	2) INSPIRATIONAL
+    	3) TECH_BRO
+    	4) IMPOSTER
+    	5) MONK
+
+    	Modernization:
+    	Refresh dated concepts to the degree specified by the MODERNIZATION_LEVEL
+    	
+    	Hard rules:
+    	- Output MUST contain exactly five tweets, one per voice, and nothing else.
+    	- Add emojis sporadically inside the text each tweet, per the EMOJI_LEVEL (low=1-2 emojis per tweet, med=3-5, high=8-10 emojis per tweet).
+
+    	""";
+
+    	// IMPORTANT: use {var} placeholders (not {{var}}) to match Spring AI PromptTemplate in many setups
+    	String userTemplate = """
+    	ORIGINAL_TWEET:
+    	{postText}
+
+    	TOPIC_HINT:
+    	{topicHint}
+
+    	EMOJI_LEVEL:
+    	{emojiLevel}
+
+    	MODERNIZATION_LEVEL:
+    	{modernizationLevel}
+    	""";
+
+    	originalTweet = "How to Realistically Start: ◽HTML ◽CSS ◽JavaScript ◽React ◽Github ◽Git ◽Create a Twitter account  ◽Share Knowledge  ◽Build Network  ◽Get a remote Job";
+    	String topicHint = "Lean towards AWS certification.";
+    	String emojiLevel = "high";          // low | med | high
+    	String modernizationLevel = "high"; // low | med | high
+
+    	PromptTemplate promptTemplate = new PromptTemplate(userTemplate);
+
+    	String userPrompt = promptTemplate.render(Map.of(
+    	    "postText", originalTweet,
+    	    "topicHint", topicHint,
+    	    "emojiLevel", emojiLevel,
+    	    "modernizationLevel", modernizationLevel
+    	));
+
+    	// Call the model with system + user
+    	return chatClient
+    	    .prompt()
+    	    .system(systemTemplate)
+    	    .user(userPrompt)
+    	    .call()
+    	    .content();
+    }
+}
+
+
+******************************
+
+package com.mcnz.spring.ai;
+
+import java.util.Map;
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * Simple controller that generates "slop" tweets from a template.
+ */
+@RestController
+public class SlopGenerator {
+	
+    private final ChatClient chatClient;
+    
+	static final String systemTemplate = """
+	You are a tweet rewrite engine that does not use em-dashes and prefers to end sentences rather than use semi-colons.
+
+	Goal:
+	Given one ORIGINAL_TWEET, produce FIVE rewritten tweets, each in a different voice:
+	1) PIRATE
+	2) INSPIRATIONAL
+	3) TECH_BRO
+	4) IMPOSTER
+	5) MONK
+
+	Modernization:
+	Refresh dated concepts to the degree specified by the MODERNIZATION_LEVEL
+	
+	Hard rules:
+	- Output MUST contain exactly five tweets, one per voice, and nothing else.
+	- Add emojis sporadically inside the text each tweet, per the EMOJI_LEVEL (low=1-2 emojis per tweet, med=3-5, high=8-10 emojis per tweet).
+
+	""";
+    
+    static final ChatOptions options = ChatOptions.builder()
+            .model("gpt-5.2")
+            .temperature(.8)
+            .topP(.95)
+            //.maxTokens(1000)
+            .build();
+
+    
+    public SlopGenerator(ChatClient.Builder builder) {
+        this.chatClient = builder.defaultSystem(systemTemplate).defaultOptions(options).build();
+    }
+
+    /**
+     * Generate a tweet based on the provided template.
+     * Example: GET /tweets?template=hello
+     * @param template the template string
+     * @return generated tweet
+     */
+    @GetMapping("/tweets")
+    public String tweets(@RequestParam String originalTweet) {
+
+
+
+    	// IMPORTANT: use {var} placeholders (not {{var}}) to match Spring AI PromptTemplate in many setups
+    	String userTemplate = """
+    	ORIGINAL_TWEET:
+    	{postText}
+
+    	TOPIC_HINT:
+    	{topicHint}
+
+    	EMOJI_LEVEL:
+    	{emojiLevel}
+
+    	MODERNIZATION_LEVEL:
+    	{modernizationLevel}
+    	""";
+
+    	originalTweet = "How to Realistically Start: ◽HTML ◽CSS ◽JavaScript ◽React ◽Github ◽Git ◽Create a Twitter account  ◽Share Knowledge  ◽Build Network  ◽Get a remote Job";
+    	String topicHint = "Lean towards AWS certification.";
+    	String emojiLevel = "high";          // low | med | high
+    	String modernizationLevel = "high"; // low | med | high
+
+    	PromptTemplate promptTemplate = new PromptTemplate(userTemplate);
+
+    	String userPrompt = promptTemplate.render(Map.of(
+    	    "postText", originalTweet,
+    	    "topicHint", topicHint,
+    	    "emojiLevel", emojiLevel,
+    	    "modernizationLevel", modernizationLevel
+    	));
+
+    	// Call the model with system + user
+    	return chatClient
+    	    .prompt()
+    	    .user(userPrompt)
+    	    .call()
+    	    .content();
+    }
+}
+
+
+
+
+
+*****************************
+
+

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simpsons Expert — Chat</title>
+  <style>
+    :root{--bg:#0f1720;--card:#0b1220;--muted:#94a3b8;--accent:#f97316;--glass:rgba(255,255,255,0.03)}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;background:linear-gradient(180deg,#071028 0%,#071423 100%);color:#e6eef8;display:flex;align-items:center;justify-content:center;height:100vh}
+    .app{width:960px;max-width:94vw;background:linear-gradient(180deg,var(--card),#07101a);border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.7);overflow:hidden}
+    header{display:flex;align-items:center;gap:16px;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.03)}
+    h1{font-size:18px;margin:0}
+    .container{display:grid;grid-template-columns:1fr 360px;gap:20px;padding:20px}
+    .panel{background:var(--glass);padding:16px;border-radius:10px}
+    .chat{height:560px;display:flex;flex-direction:column}
+    .messages{flex:1;overflow:auto;padding-right:8px}
+    .msg{margin:12px 0;padding:12px;border-radius:10px;max-width:78%}
+    .user{background:linear-gradient(90deg,#0f1720,#081020);align-self:flex-end;border:1px solid rgba(255,255,255,0.03)}
+    .bot{background:linear-gradient(90deg,#081029,#071022);border:1px solid rgba(255,255,255,0.02)}
+    .meta{font-size:12px;color:var(--muted);margin-bottom:6px}
+    form{display:flex;gap:8px;margin-top:12px}
+    input[type=text]{flex:1;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    button{background:var(--accent);border:none;padding:10px 14px;border-radius:10px;color:#041018;font-weight:700;cursor:pointer}
+    .history{height:560px;display:flex;flex-direction:column}
+    .history-list{overflow:auto;flex:1;padding-right:6px}
+    .history-item{padding:10px;border-radius:8px;margin-bottom:8px;background:linear-gradient(90deg,rgba(255,255,255,0.02),transparent);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
+    .thinking{display:inline-block;margin-left:8px;color:var(--muted)}
+    .empty{color:var(--muted);padding:24px;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Simpsons Expert</h1>
+      <div style="margin-left:auto;color:var(--muted);font-size:13px">Ask anything about Springfield</div>
+    </header>
+    <div class="container">
+      <div class="panel chat">
+        <div class="messages" id="messages" aria-live="polite"></div>
+        <form id="promptForm">
+          <input id="promptInput" type="text" placeholder="Ask about Homer, Bart, Maggie..." autocomplete="off" required />
+          <button id="sendBtn" type="submit">Send</button>
+        </form>
+      </div>
+      <aside class="panel history">
+        <strong style="display:block;margin-bottom:8px">History (last 10)</strong>
+        <div class="history-list" id="history"></div>
+        <div style="margin-top:12px;text-align:center"><button id="clearBtn" style="background:#334155;color:#e6eef8;padding:8px 12px;border-radius:8px">Clear</button></div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const messagesEl = document.getElementById('messages');
+    const historyEl = document.getElementById('history');
+    const promptForm = document.getElementById('promptForm');
+    const promptInput = document.getElementById('promptInput');
+    const clearBtn = document.getElementById('clearBtn');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function renderMessage(who, text) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'msg ' + (who === 'user' ? 'user' : 'bot');
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = who === 'user' ? 'You' : 'SimpsonsExpert';
+      const body = document.createElement('div');
+      body.innerHTML = text.replace(/\n/g, '<br/>');
+      wrapper.appendChild(meta);
+      wrapper.appendChild(body);
+      messagesEl.appendChild(wrapper);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return wrapper;
+    }
+
+    function loadHistory(){
+      const raw = localStorage.getItem('simpsons-history');
+      if(!raw){historyEl.innerHTML = '<div class="empty">No history yet</div>';return []}
+      try{const arr = JSON.parse(raw);historyEl.innerHTML='';arr.forEach((h,idx)=>{
+        const item = document.createElement('div');item.className='history-item';item.innerHTML = `<strong>${escapeHtml(h.prompt)}</strong><div style="color:var(--muted);font-size:13px;margin-top:6px">${escapeHtml(h.answer).slice(0,120)}${h.answer.length>120?'...':''}</div>`;
+        item.addEventListener('click',()=>{
+          messagesEl.innerHTML='';renderMessage('user',h.prompt);renderMessage('bot',h.answer);
+        });historyEl.appendChild(item);
+      });return JSON.parse(raw)}catch(e){localStorage.removeItem('simpsons-history');historyEl.innerHTML='<div class="empty">No history yet</div>';return []}}
+
+    function saveHistory(entry){
+      const arr = loadHistory() || [];
+      arr.unshift(entry);
+      while(arr.length>10) arr.pop();
+      localStorage.setItem('simpsons-history', JSON.stringify(arr));
+      loadHistory();
+    }
+
+    function escapeHtml(str){
+      return str.replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[s]);
+    }
+
+    promptForm.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const prompt = promptInput.value.trim();
+      if(!prompt) return;
+      renderMessage('user', escapeHtml(prompt));
+      promptInput.value='';
+      sendBtn.disabled = true;
+
+      const thinkingEl = document.createElement('span');
+      thinkingEl.className='thinking';
+      thinkingEl.textContent='thinking...';
+      messagesEl.appendChild(thinkingEl);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      try{
+        const res = await fetch(`/trivia?prompt=${encodeURIComponent(prompt)}`);
+        const text = await res.text();
+        messagesEl.removeChild(thinkingEl);
+        renderMessage('bot', escapeHtml(text));
+        saveHistory({prompt,answer:text});
+      }catch(err){
+        messagesEl.removeChild(thinkingEl);
+        renderMessage('bot','Error: '+escapeHtml(String(err)));
+      }finally{sendBtn.disabled=false}
+    });
+
+    clearBtn.addEventListener('click', ()=>{localStorage.removeItem('simpsons-history');loadHistory();});
+
+    // initial render
+    loadHistory();
+    // show welcome
+    renderMessage('bot','Hi — ask me anything about The Simpsons.');
+  </script>
+</body>
+</html>
